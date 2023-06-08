@@ -1,0 +1,6 @@
+---
+
+arenadata_data_volume: "/opt/adcm"
+
+arenadata_image_name: hub.arenadata.io/adcm/adcm
+arenadata_image_tag: latest

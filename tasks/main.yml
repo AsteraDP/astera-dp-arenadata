@@ -1,0 +1,56 @@
+---
+- include_vars: "{{ item }}"
+  with_first_found:
+  - "../vars/{{ansible_distribution}}-{{ansible_distribution_version}}.yml"
+  - "../vars/{{ansible_distribution}}-{{ansible_distribution_major_version}}.yml"
+  - "../vars/{{ansible_distribution}}.yml"
+  - "../vars/{{ansible_os_family}}.yml"
+  - "../vars/default.yml"
+
+- name: Install basic packages
+  when: ansible_os_family == "Debian"
+  apt: name={{ item }} state=present
+  with_items:
+    - "{{ DEFAULT_PACKAGES }}"
+  tags:
+    - apt
+
+- name: Install basic packages
+  when: ansible_os_family == "RedHat"
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ DEFAULT_PACKAGES }}"
+  tags:
+    - yum
+
+- name: Create arenadata data volume
+  file:
+    path: "{{ arenadata_data_volume }}"
+    state: directory
+    owner: root
+    group: root
+
+- name: Create arenadata container
+  docker_container:
+    name: dp_arenadata_cm
+    image: "{{ arenadata_image_name }}:{{ arenadata_image_tag }}"
+    state: started
+    ports:
+      - "8000:8000"
+    volumes:
+      - "{{ arenadata_data_volume }}:/adcm/data"
+  when: arenadata_hosts is not defined
+
+- name: Create arenadata container
+  docker_container:
+    name: dp_arenadata_cm
+    image: "{{ arenadata_image_name }}:{{ arenadata_image_tag }}"
+    state: started
+    ports:
+      - "8000:8000"
+    volumes:
+      - "{{ arenadata_data_volume }}:/adcm/data"
+    etc_hosts: "{{ arenadata_hosts }}"
+  when: arenadata_hosts is defined
